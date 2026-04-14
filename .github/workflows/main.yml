@@ -1,4 +1,4 @@
-name: Entrypoint Injection Test
+name: Entrypoint Injection Test V2
 on: [push]
 jobs:
   test:
@@ -6,15 +6,27 @@ jobs:
     services:
       myservice:
         image: alpine:latest
-        options: --entrypoint sh
+        options: >-
+          --entrypoint sh
+          -e INJECTED_VAR=test123
     steps:
-      - name: Check Service Output
+      - name: Keep Container Alive And Check
         run: |
-          echo "=== DOCKER PROCESSES ==="
-          docker ps -a
-          echo "=== SERVICE LOGS ==="
-          docker logs $(docker ps -aq --filter "ancestor=alpine:latest") 2>&1 || true
-          echo "=== NETWORK INFO ==="
-          cat /etc/hosts
-          echo "=== SERVICE ENV ==="
-          docker exec $(docker ps -q --filter "ancestor=alpine:latest") env 2>&1 || true
+          echo "=== INTERNAL NETWORK ==="
+          ip addr show
+          echo "=== ROUTING TABLE ==="
+          ip route
+          echo "=== DNS CONFIG ==="
+          cat /etc/resolv.conf
+          echo "=== TRY REACH INTERNAL IP ==="
+          curl -s --max-time 3 http://10.1.0.168 || true
+          ping -c 2 10.1.0.168 || true
+          echo "=== INTERNAL HOSTNAME SCAN ==="
+          curl -s --max-time 3 \
+          http://runnervm35a4x.4giwmtbyxs3efnkvhxwlgixj1f.dx.internal.cloudapp.net \
+          || true
+          echo "=== METADATA SERVICE TEST ==="
+          curl -s --max-time 3 \
+          http://169.254.169.254/metadata/instance?api-version=2021-02-01 \
+          -H "Metadata: true" || true
+          echo "=== DONE ==="
